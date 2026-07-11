@@ -1,8 +1,9 @@
 $WshShell = New-Object -comObject WScript.Shell
 $Shortcut = $WshShell.CreateShortcut("$HOME\Desktop\JARVIS.lnk")
 
-# Point the shortcut to the invisible launcher script so no console window stays open
-$Shortcut.TargetPath = "$PWD\launch_jarvis.vbs"
+# Point the shortcut directly to PowerShell to silently elevate python and run main.py
+$Shortcut.TargetPath = "powershell.exe"
+$Shortcut.Arguments = "-WindowStyle Hidden -Command `"Start-Process python -ArgumentList 'main.py' -Verb RunAs -WorkingDirectory '$PWD'`""
 $Shortcut.WorkingDirectory = "$PWD"
 
 # Give the shortcut the JARVIS logo!
