@@ -3205,6 +3205,7 @@ Actions:
 {{"thought": "I need to double click the song title at tag 5.", "action": "double_click", "target_id": "5"}}
 {{"thought": "I need to click tag 15, clear existing text, and type.", "action": "click_and_type", "target_id": "15", "text": "MKBHD", "clear_text": true, "press_enter": true}}
 {{"thought": "I need to press the enter key.", "action": "press", "key": "enter"}}
+{{"thought": "I need to wait for the ad to finish or for a skip button to appear.", "action": "wait", "seconds": 2}}
 {{"thought": "The website requires a login.", "action": "wait_for_login", "message": "Please log in and wake me up."}}
 {{"thought": "I need to know which city the user wants to depart from.", "action": "ask_clarification", "question": "Which city would you like to depart from, Sir?"}}
 {{"thought": "The page loaded but there is no Book button. Tickets are likely unavailable.", "action": "fail", "message": "The event page is open, but tickets are not currently available for booking."}}
@@ -3407,6 +3408,11 @@ DOMAIN SPECIFIC RULES:
                 elif action == "maximize_window":
                     self._maximize_active_window()
                     result_text = "Maximized the current window natively."
+                elif action == "wait":
+                    wait_time = float(action_data.get("seconds", 2.0))
+                    logger.info("Agent waiting for %.1f seconds...", wait_time)
+                    time.sleep(wait_time)
+                    result_text = f"Waited for {wait_time} seconds."
                 else:
                     result_text = f"Unknown action {action}"
 
