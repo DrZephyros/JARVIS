@@ -488,19 +488,17 @@ DOMAIN_KNOWLEDGE = {
     "video_playback": {
         "planner_rules": """CRITICAL RULES FOR VIDEO PLAYBACK:
 - If the goal involves playing a video, after the video starts you MUST append these verification steps:
-  - Check if an ad is playing. If so, wait for it to finish or click the 'Skip' button. NEVER click the ad banner. If the 'Skip' button is not visible yet, or if it does NOT have a clear red numeric tag on it, you MUST use the 'wait' action. DO NOT guess element IDs or click randomly near the bottom right. DO NOT click anywhere on the video player as it will pause the ad.
   - Check if the video is muted (look at the speaker icon on the player). If and ONLY if it is muted, press 'm' to unmute it. Do NOT press 'm' if it is already unmuted.
   - Check if the video is playing past the 20-second mark. If it is past 20 seconds, rewind to the start (<rewind_hotkey>). Do NOT rewind if it is under 20 seconds.
   - Check if the video is in fullscreen mode. If the video player does NOT take up the entire screen, press the fullscreen hotkey to fullscreen the video. Do NOT press it if it is already fullscreen.""",
         "agent_rules": """- When playing a video, only press the fullscreen hotkey to enter fullscreen if the video is NOT already in fullscreen mode.
 - To check if a YouTube video is muted, look at the speaker icon on the player controls. A slash through it means muted. Do NOT press 'm' unless you are absolutely sure it is muted.
-- For YouTube ads: The "Skip" button appears on the right side of the video player. You must ONLY click it if there is a numeric tag DIRECTLY on it. If there is NO tag directly on "Skip", or it's just counting down, you MUST use the "wait" action for 2 seconds. DO NOT use the tag of a different element (like a recommended video on the bottom right) to try to click "Skip".
+- Do NOT attempt to skip ads. Just ensure the video (or ad) is playing, fullscreen, and unmuted.
 - If the goal involves playing a video, do NOT stop at search results. You must click the video thumbnail and wait for it to play.""",
         "verify_rules": """  CRITICAL FOR VIDEOS: The task is ONLY complete if ALL of these are true:
-  1. The video is playing.
+  1. The video (or an ad for the video) is playing.
   2. The browser is maximized AND the video player is in FULLSCREEN mode (taking up the entire screen).
-  3. There are NO ads playing.
-  If an ad is playing, or if the video is not fullscreen, you MUST return "continue" so the agent can finish its plan."""
+  If the video player is not fullscreen, you MUST return "continue" so the agent can finish its plan."""
     },
     "music_playback": {
         "planner_rules": """CRITICAL RULES FOR MUSIC PLAYBACK:
