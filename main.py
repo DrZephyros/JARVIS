@@ -1687,7 +1687,7 @@ class Jarvis:
                 pass
             raise ValueError(f"Could not parse or repair JSON: {raw}")
 
-    def _queue_agent(self, goal: str):
+    def _queue_agent(self, goal: str, skip_preinit: bool = False):
         """Start the autonomous agent."""
         if self._agent_active.is_set():
             logger.warning("Agent already active, ignoring queue request.")
@@ -1698,7 +1698,7 @@ class Jarvis:
         self._agent_active.set()
         threading.Thread(
             target=self._agentic_loop,
-            args=(goal.strip(),),
+            args=(goal.strip(), skip_preinit),
             daemon=True,
             name="agent-loop"
         ).start()
@@ -2341,18 +2341,18 @@ class Jarvis:
                     if "liked" in query or "favorites" in query:
                         logger.info("Launching Spotify liked songs URI and queuing agent to click Play")
                         subprocess.Popen("start spotify:collection:tracks", shell=True)
-                        self._queue_agent("Find the Play button for my liked songs and click it.")
+                        self._queue_agent("Find the Play button for my liked songs and click it.", skip_preinit=True)
                         self._force_sleep = True
                     else:
                         search_uri = f"spotify:search:{urllib.parse.quote(query)}"
                         logger.info("Launching Spotify search URI: %s", search_uri)
                         subprocess.Popen(f"start {search_uri}", shell=True)
-                        self._queue_agent(f"Find the Play button for '{full_request}' on Spotify and click it.")
+                        self._queue_agent(f"Find the Play button for '{full_request}' on Spotify and click it.", skip_preinit=True)
                 else:
                     # Fallback for youtube or general
                     url = f"https://www.youtube.com/results?search_query={urllib.parse.quote(query)}"
                     self._open_urls_in_chrome([url])
-                    self._queue_agent(f"Play the media requested by the user: '{full_request}'. Note: You are currently on the YouTube search results page for '{query}'.")
+                    self._queue_agent(f"Play the media requested by the user: '{full_request}'. Note: You are currently on the YouTube search results page for '{query}'.", skip_preinit=True)
                     self._force_sleep = True
 
             elif intent == "locate_and_open":
@@ -3061,7 +3061,7 @@ Example:
             logger.error("Failed to generate screen context: %s", e)
             return None, {}, None
 
-    def _agentic_loop(self, goal: str):
+    def _agentic_loop(self, goal: str, skip_preinit: bool = False):
         """
         Vision-only autonomous agent loop using Planner-Actor Framework.
         """
@@ -3070,12 +3070,14 @@ Example:
         logger.info("Starting Vision-only agent loop for goal: %s", goal)
         
         # ── PRE-INITIALIZATION PHASE ──
-        logger.info("Running Pre-Initialization App check...")
-        preinit_prompt = f"""Does this goal require opening a specific Windows desktop application (<desktop_app_name>)? 
+        try:
+            if skip_preinit:
+                raise Exception("skip")
+            logger.info("Running Pre-Initialization App check...")
+            preinit_prompt = f"""Does this goal require opening a specific Windows desktop application (<desktop_app_name>)? 
 If the user just wants to play media, interact with a website, search the web, or book something, YOU MUST output the exact string "default browser" for the app_name AND set requires_app to true. Do NOT guess "chrome", "edge", or "firefox".
 Goal: {goal}
 Return ONLY a JSON object: {{"requires_app": true/false, "app_name": "name of known app, or 'default browser'"}}"""
-        try:
             preinit_raw = generate_text(
                 preinit_prompt,
                 model=MODEL_FAST,
@@ -3129,7 +3131,8 @@ Return ONLY a JSON object: {{"requires_app": true/false, "app_name": "name of kn
                 else:
                     logger.info("App %s not in safe whitelist, skipping native launch.", app_name)
         except Exception as e:
-            logger.error("Pre-Initialization Phase failed: %s", e)
+            if str(e) != "skip":
+                logger.error("Pre-Initialization Phase failed: %s", e)
         
         
         # ── DOMAIN CLASSIFICATION ──
