@@ -3,7 +3,6 @@
 An autonomous, multimodal AI assistant built to act as a replica of Iron Man's JARVIS. It features a voice-activated Dual-LLM architecture that allows it to hold natural conversations, manage your emails, and visually interact with your computer's screen to navigate applications autonomously.
 
 ## 🌟 Core Features
-
 - **Wake Word Detection & Speech-to-Text**: Utilizes lightweight offline VOSK models for lightning-fast wake word recognition ("Jarvis"), coupled with Google STT for highly accurate command transcription.
 - **Dual-LLM Planner/Actor Architecture**: Powered by Google Gemini Pro (Strategic Planner) and Gemini Flash (Vision Actor). JARVIS parses your intent, formulates a step-by-step strategy, and executes it efficiently to save API tokens.
 - **Autonomous Vision UI Navigation**: Uses an advanced Computer Vision pipeline (OpenCV + Set-of-Mark OCR Prompting) to dynamically identify, read, and click buttons on your screen. It can skip ads, maximize videos, and navigate GUIs just like a human.
@@ -13,61 +12,80 @@ An autonomous, multimodal AI assistant built to act as a replica of Iron Man's J
 
 ---
 
-## 🛠️ Setup Instructions
+## 🛠️ Step-by-Step Setup Guide (For Beginners)
+Don't worry if you aren't a programmer! Just follow these steps closely to get JARVIS running on your computer.
 
-### 1. Prerequisites
-- **Python 3.10+**: Ensure Python is installed and added to your system PATH.
-- **Git**: To clone the repository.
+### Step 1: Install Python and Git
+1. **Download Python**: Go to [python.org](https://www.python.org/downloads/) and download Python (Version 3.10 or newer).
+   - **CRITICAL**: During the installation, make sure you check the box that says **"Add Python to PATH"** at the very bottom before clicking Install. If you miss this, JARVIS won't know how to run!
+2. **Download Git**: Go to [git-scm.com](https://git-scm.com/downloads) and install Git for Windows. You can just click "Next" on all the default settings.
 
-### 2. Installation
-Clone the repository and install the required dependencies:
+### Step 2: Download the JARVIS Code
+1. Open your computer's **Command Prompt** (press the Windows key, type `cmd`, and hit Enter).
+2. Type the following command to download the code to your computer and hit Enter:
+   ```bash
+   git clone https://github.com/DrZephyros/JARVIS.git
+   ```
+3. Move into the JARVIS folder you just downloaded by typing this and hitting Enter:
+   ```bash
+   cd JARVIS
+   ```
+
+### Step 3: Install Required Libraries
+JARVIS needs a few extra software packages to run. While still in the Command Prompt (inside the JARVIS folder), run this command:
 ```bash
-git clone https://github.com/DrZephyros/JARVIS.git
-cd JARVIS
 pip install -r requirements.txt
 ```
+*Wait for the progress bars to finish downloading everything.*
 
-### 3. API Keys & Environment Setup
-You will need API keys for the LLM and TTS engines.
-1. Rename the `.env.example` file to `.env`.
-2. Open `.env` and paste in your respective keys:
-   - `GEMINI_API_KEY`
-   - `ELEVENLABS_API_KEY`
-   - (Other keys if requested).
+### Step 4: Get Your AI Brain Keys (API Keys)
+JARVIS needs to connect to Google Gemini (for his brain) and ElevenLabs (for his voice). These keys act like personal passwords so JARVIS can use their services.
+1. Find the `.env.example` file in your JARVIS folder and rename it to exactly `.env` (make sure it doesn't accidentally become `.env.txt`).
+2. Open the `.env` file using Notepad.
+3. **Get a Gemini API Key**: Go to [Google AI Studio](https://aistudio.google.com/), sign in, and click "Create API Key". Paste this key next to `GEMINI_API_KEY=` in your `.env` file.
+4. **Get an ElevenLabs API Key**: Go to [ElevenLabs](https://elevenlabs.io/), create a free account, click on your profile in the bottom left -> "Profile + API key", and copy the key. Paste it next to `ELEVENLABS_API_KEY=` in your `.env` file.
+5. Save and close the `.env` file.
 
-### 4. Authentication (For Email Integration)
-To allow JARVIS to read your emails, you must configure cloud projects for the accounts you use.
+### Step 5: Email Integration (Optional but Highly Recommended)
+To allow JARVIS to read your emails safely, you need to tell Google or Microsoft to trust JARVIS.
 
-**Google Account Setup**:
-1. Create OAuth 2.0 Credentials (Desktop App) in Google Cloud.
-2. Download the JSON file and rename it exactly to `google_client_secrets.json`.
-3. Place this file in the root JARVIS directory.
+**For Gmail / Google Accounts**:
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
+2. Create a new Project, and go to "APIs & Services" -> "Credentials".
+3. Click "Create Credentials" -> "OAuth client ID" (Choose "Desktop app").
+4. Click the download icon to save the JSON file to your computer.
+5. Rename the downloaded file to exactly `google_client_secrets.json` and drag it into your JARVIS folder.
 
-**Microsoft Account Setup**:
-1. Create an App Registration in the Microsoft Entra ID (Azure) portal.
-2. Configure it for "Mobile and desktop applications".
-3. Copy your Application (client) ID into a new file named `azure_client_id.txt`.
-4. Place this file in the root JARVIS directory.
+**For Outlook / Microsoft Accounts**:
+1. Go to the [Microsoft Entra ID (Azure) Portal](https://entra.microsoft.com/).
+2. Go to "Applications" -> "App registrations" and click "New registration".
+3. Name it "JARVIS" and set the redirect URI to "Public client/native (mobile & desktop)".
+4. Once created, copy the "Application (client) ID" (it looks like a long string of letters and numbers).
+5. Create a new text file in your JARVIS folder named exactly `azure_client_id.txt` and paste the ID inside.
 
-### 5. Download Offline Wake Word Models
-JARVIS relies on a local VOSK model to continuously listen for his name without burning cloud API credits.
-Run the included setup script to download and extract the required models:
-```bash
-python setup_vosk.py
-```
+### Step 6: Download JARVIS's Ears (Wake Word Models)
+JARVIS relies on a local offline model to continuously listen for his name ("Jarvis") without burning cloud API credits or invading your privacy.
+Run this simple script to download his "ears":
+1. In your Command Prompt (still inside the JARVIS folder), type:
+   ```bash
+   python setup_vosk.py
+   ```
+   *Wait for the download to finish.*
 
 ---
 
-## 🚀 Running JARVIS
+## 🚀 How to Start JARVIS!
 
-You can launch JARVIS through the terminal by simply running:
+You are all set! You can launch JARVIS in two ways:
+
+**Method 1: Terminal (For Developers)**
+Open your Command Prompt in the JARVIS folder and type:
 ```bash
 python main.py
 ```
 
-### Create a Desktop Shortcut
-If you prefer a seamless, double-click experience to launch JARVIS in the background (with his proper icon), run the included PowerShell script to generate a desktop shortcut automatically:
-
-1. Right-click `Create_Shortcut.ps1` in your folder.
-2. Select **Run with PowerShell**.
-3. A `JARVIS` icon will appear on your desktop. Double-click it anytime to boot up the system!
+**Method 2: The Easy Desktop Shortcut (For Everyone Else)**
+1. Go to your JARVIS folder and find the file named `Create_Shortcut.ps1`.
+2. Right-click on it and select **"Run with PowerShell"**.
+3. A beautiful **JARVIS** icon will appear on your computer's desktop!
+4. From now on, you can just double-click that icon on your desktop to wake him up! No terminal required.
