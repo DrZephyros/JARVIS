@@ -1,0 +1,17 @@
+{
+    "secure vault": {
+        "password": "judge",
+        "spotlight": "",
+        "prompt": "chrome"
+    },
+    "setup workspace": {
+        "password": null,
+        "spotlight": "",
+        "prompt": "play liked songs spotify\nOpen Allen Overseas Digital portal\nOpen SATisfactory official website"
+    },
+    "tech creator": {
+        "password": null,
+        "spotlight": "",
+        "prompt": "Open the following youtube channels in separate tabs: MrWhosetheboss, MKBHD, Linus Tech Tips, Beebomco, TechWiser"
+    }
+}

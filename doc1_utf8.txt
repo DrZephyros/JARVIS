@@ -1,0 +1,97 @@
+# Project Journal: Developing J.A.R.V.I.S. – An Autonomous, Multimodal AI Assistant
+
+## 1. Introduction & Project Scope
+My goal for this project was to create J.A.R.V.I.S., a voice-activated, fully autonomous AI assistant capable of interacting with a computer exactly like a human would. Instead of relying purely on backend APIs, I wanted to build an agent that could "see" the screen and navigate graphical user interfaces (GUIs) to accomplish complex tasks—from casual conversation to dynamically playing specific media on YouTube or Spotify.
+
+The technical scope of the project involved integrating Speech-to-Text (STT) for voice commands, Text-to-Speech (TTS) for a responsive personality, and a sophisticated Dual-LLM architecture (Planner and Actor) hooked into computer vision algorithms to allow the AI to click, type, and navigate Windows applications.
+
+## 2. Core Architecture & Workflow
+The system operates on a highly optimized, multi-stage workflow to balance speed and intelligence:
+
+1. **Wake Word & Speech Recognition:** The system uses Porcupine for offline wake-word detection, ensuring low latency, followed by Google STT to transcribe the user's spoken command.
+2. **Intent Routing (Fast LLM):** To minimize delays, a fast language model acts as a router. It parses the transcript and categorizes it into intents such as `conversation`, `system` (volume/hotkeys), `open_app`, or `autonomous_agent`.
+3. **The Planner-Actor Framework:** For complex GUI tasks (e.g., "Play the latest video from Mrwhosetheboss"):
+   - **The Planner:** An LLM generates a strict, step-by-step technical plan (e.g., maximize window -> search channel -> click videos tab -> play latest video -> skip ads -> enter fullscreen).
+   - **The Vision Agent (Actor):** The system takes a screenshot and uses OpenCV (Set-of-Mark prompting) to draw bounding boxes and numeric IDs over clickable UI elements. A vision model analyzes this annotated image alongside the Planner's instructions to decide which element to interact with, controlling the physical mouse and keyboard.
+4. **Verification LLM:** After every action, a separate verification model analyzes a clean screenshot to confirm if the overarching goal has been achieved before stopping the loop.
+
+## 3. Key Challenges & Technical Solutions
+
+Building an AI that interacts with dynamic, unpredictable user interfaces presented several complex engineering hurdles.
+
+### Challenge 1: The "Literal Search" Trap
+**The Problem:** When instructed to "Play the latest Mrwhosetheboss video," the fast router would search that exact literal phrase on YouTube. This resulted in messy search result pages cluttered with YouTube Shorts and irrelevant videos, confusing the Vision Agent.
+**The Solution:** I re-engineered the Intent LLM's JSON schema to perform entity extraction. It now separates the core target (`query: "mrwhosetheboss"`) from the action (`modifier: "latest video"`). This allows the system to instantly navigate to a clean, highly predictable channel page, drastically improving the Vision Agent's success rate.
+
+### Challenge 2: Vision Agent Blindspots & UI Scaling
+**The Problem:** The Vision Agent would frequently misclick or fail to find small buttons, such as YouTube's "Skip Ad" button. This occurred because the browser window would often open in a smaller, windowed mode, compressing the UI elements.
+**The Solution:** Initially, I attempted to hardcode a Python script to force a window maximization shortcut (`Win+Up`). However, this rigid approach failed if the window was already maximized or if the task didn't require it. I pivoted to an autonomous solution: I established a "Universal Rule" for the Planner LLM. Now, the agent's very first autonomous step is to visually check if the application is maximized. If not, the AI itself decides to execute the `Win+Up` hotkey, ensuring a massive, easily readable UI for the computer vision system.
+
+### Challenge 3: Premature Task Completion
+**The Problem:** The Verification LLM was instructed to stop the agent once it saw the video playing. Consequently, the moment the agent clicked the video thumbnail, the Verifier would instantly kill the process—preventing the agent from executing its final "AI Butler" steps (skipping ads, unmuting, and entering fullscreen).
+**The Solution:** I overhauled the Verification LLM's completion criteria. I implemented a strict, multi-condition checklist: a media task is only marked as "Complete" if the video is playing, there are absolutely no ads on the screen, and the player is in true fullscreen mode. This forced the agent to stay active and meticulously execute its entire plan.
+
+### Challenge 4: Conflicting AI Directives
+**The Problem:** Even when the Planner instructed the agent to press `Win+Up` to maximize the window, the agent refused to do it. 
+**The Solution:** Upon debugging the LLM system prompts, I discovered a legacy rule deeply embedded in the Vision Agent's core instructions that explicitly forbade the use of `Win+Up`. Removing this contradiction perfectly aligned the Planner and the Actor, allowing seamless execution.
+
+Challenge 5: The "Transparent Mask" Template Trap
+The Problem: YouTube frequently overlays subtle black/grey gradient rectangles over the skip countdown timer and button area. To the human eye, it looks normal, but to OpenCV's mathematical template matching, the underlying pixel grid layout shifts just enough to lower the confidence score or throw the exact center offset off target.
+The Solution: I pivoted away from rigid template matching and configured the computer vision pipeline to search for Contour Shapes and run the frame through a lightweight text finder (EasyOCR). This allowed the agent to identify the semantic text of the button rather than relying on exact pixel patterns.
+
+Challenge 6: Background vs. Autonomous Generation
+The Problem: When tasked with generating a massive document (like a college application), JARVIS would default to its visual autonomous agent—physically opening Word and typing out the text character by character. This was incredibly slow and drained expensive agent API credits.
+The Solution: I overhauled the intent parser to create a dual-path document system. Pure generation requests are routed to a dedicated background LLM that instantly generates and saves the .docx file silently, while complex data-entry tasks (like updating a LinkedIn profile from a resume) trigger the physical visual agent.
+
+Challenge 7: AI Hallucinations in TTS Presets
+The Problem: For very short, pre-recorded audio responses (like "Task aborted"), the ElevenLabs TTS model would occasionally hallucinate and append a second, repetitive sentence (e.g., "Task aborted, sir. Autonomous tasks aborted, sir.") to fill the audio silence.
+The Solution: I wrote a custom generation script to hit the TTS API with strict, explicit phrases, regenerating the entire suite of preset audio files to ensure crisp, single-sentence responses without any model hallucination.
+
+Challenge 8: Graceful Degradation for Missing Software & Logins
+The Problem: The visual agent would blindly search for applications that weren't installed on the PC, or it would get stuck trying to bypass secure login screens on websites, burning through API credits in a loop.
+The Solution: I implemented strict fail-fast rules into the visual agent's core prompt. If an app isn't found, it now autonomously pivots to the web version (e.g., office.com). If it detects an authentication gateway, it triggers a newly engineered "wait_for_login" state, pausing the autonomous loop and asking the user to securely log in before resuming.
+
+## 4. Architectural Pivots & Iterative Design
+
+A key part of my engineering process was recognizing when an approach wasn't scaling and being willing to completely pivot the architecture.
+
+- **Single-Agent to Dual-Agent Pivot (Planner-Actor):** Initially, the Vision Agent operated in a purely reactive loop—it would look at the screen and instantly try to decide its next action without long-term foresight. This caused erratic behavior, like clicking random videos because it thought a search page was the final destination. I pivoted to a dual-agent architecture, introducing a "Planner" LLM to decouple high-level reasoning (step-by-step strategy) from low-level execution (OpenCV coordinate clicking). This separation of concerns made the agent vastly more reliable.
+- **Hardcoded Scripts to Autonomous Logic:** Whenever the agent struggled (e.g., failing to maximize windows or skip ads), my first instinct was to write static Python scripts to force the action. I quickly realized this broke the agent's autonomy and made the system brittle. I pivoted away from hardcoding entirely, instead injecting dynamic "Universal Rules" into the LLM system prompts. This empowered the agent to visually inspect the screen and make its own intelligent decisions.
+- **Model Upgrades for Complex Reasoning:** As the Planner's rules became more complex (e.g., handling edge cases for UI scaling), I noticed smaller, faster models struggled to follow multi-step prompt constraints. I pivoted the Planner to utilize a more capable model (`gpt-4o`), selectively deploying high intelligence for generating the execution plan while retaining smaller, low-latency models for basic intent routing.
+Project Log: Dark Times
+Every ambitious engineering pursuit eventually meets its breaking point, and for JARVIS, that moment was born out of impatience during a critical development sprint. Having completely depleted my allotted quota on my primary development sandbox, Antigravity, I was desperate to maintain my momentum and finish writing the core agent code. In my haste, I made a short-sighted tactical error: I plugged a personal OpenAI API key into Codex and leveraged the incredibly heavy GPT-5.5 model to complete the programming. While the model was highly capable, its massive overhead during a lengthy coding session burned through my tokens exponentially. Because OpenAI’s delayed billing reporting didn't immediately cut off the session, I woke up to find my API balance plunged deep into the negative. I had completely destroyed the very credits I needed to deploy and test JARVIS just to finish writing it. Staring at an unviable account balance for a single coding session, I felt completely defeated, ripped off, and as though the entire project had crashed before it even had a chance to run.
+Project Log: A New Beginning
+Hitting a financial wall, however, forced me to internalize the true meaning of the phrase "haste makes waste." Instead of abandoning the project out of frustration, I chose to treat this setback as a harsh but necessary diagnostic report. It was the ultimate catalyst to pivot. I realized that clinging to an expensive, fragmented ecosystem was a mistake, and that Google's Gemini network was the superior environment for JARVIS all along. I tore down my previous plans and re-mapped the entire architecture around a highly efficient, multi-tier Gemini system. By shifting the heavy strategic planning to Gemini 3.1 Pro and utilizing the lightning-fast, ultra-low-cost "Computer Use" vision tracking of Gemini 3.5 Flash for the execution loop, I built an architecture that is fundamentally protected against token hemorrhaging. Best of all, uncovering the $10 monthly developer credit provided through my Google AI Pro tier finally gave me a sustainable, debt-free testing runway. This failure taught me that engineering resilience isn't about avoiding mistakes; it's about having the analytical clarity to look at your wrecks, learn from them, and build a smarter, more optimized system from the ashes. This failure proved to be one of my greatest lessons from this project beyond just technical understanding. It taught me a lesson I will never forget and will help me in the future. This failure has given me more than all my efforts combined. I will forever be grateful for it and to my parents for still believing in me after I let some money slip through my fingers.
+
+
+## 5. Real-World Applications & Accessibility
+
+While J.A.R.V.I.S. serves as a powerful productivity tool for the average user, its most profound impact lies in accessibility. Traditional operating systems and web applications are designed around the assumption that the user has fine motor control (to maneuver a mouse) and clear vision (to locate small UI elements like a "Skip Ad" button). J.A.R.V.I.S. completely removes these physical barriers.
+
+By leaning into purely voice-driven, autonomous GUI navigation, the project offers massive utility for individuals with physical disabilities (such as ALS, Parkinson's disease, or severe arthritis). A user who cannot physically operate a mouse or keyboard can simply speak a high-level intent—"Play the latest video from my favorite tech channel"—and J.A.R.V.I.S. handles the micro-interactions autonomously. It finds the search bar, navigates the grid layout, maximizes the window for better visibility, and even handles dynamic pop-ups like advertisements. This essentially translates spoken natural language into precise, automated physical action, restoring digital independence to those who struggle with traditional computing interfaces.
+
+## 6. Conclusion & Future Outlook
+Building J.A.R.V.I.S. transitioned from a simple voice-command script into a deep dive into autonomous agent architecture, prompt engineering, and computer vision. By solving edge cases like ad-skipping, dynamic window scaling, and LLM hallucination, I created a robust system that doesn't just blindly click coordinates, but genuinely "understands" the visual state of the computer. This project solidified my passion for developing intelligent, context-aware software that bridges the gap between human intent and machine execution.
+Competition Release Update - June 30, 2026
+Major Milestones Achieved:
+1. UI/UX Overhaul: Transitioned to a modern, glassmorphic PySide6 interface.
+2. Dual-Agent Architecture: Successfully split the workload into a fast-path Planning Agent (for basic logic and protocols) and a Vision Execution Agent (for complex UI interaction via screenshot analysis).
+3. Dynamic OCR Integration: Implemented EasyOCR directly into the vision loop, allowing JARVIS to dynamically bypass un-taggable UI elements, notably bypassing YouTube ad-blocking mechanisms.
+4. Architectural Fortification: Fixed background noise transcription leaks during active execution, implemented a universal system-wide abort kill-switch via mouse shake, and hardened the window maximization API to ensure perfectly reliable vision inputs.
+5. Competition Deployment: Packaged the entire system behind a zero-friction batch script (setup_jarvis.bat) to ensure a flawless plug-and-play experience for judges.
+
+Yikes Moments & Architecture Fixes
+Throughout the development of JARVIS, we encountered several critical failures—'yikes' moments—that necessitated significant structural rewrites. Documented below for MIT admissions review are the core mechanical errors and dead backend bottlenecks we faced, alongside the logic we rewrote to fix them.
+1. The "NoneType" JSON Serialization Crash (Dead Backend)
+Failure: The system experienced a catastrophic crash when executing the unanswered_emails intent. If the Google Auth server timed out, the OAuth credentials object returned as 'None'. The infrastructure aggressively attempted to serialize these empty credentials directly into the token.json cache using .to_json(), instantly paralyzing the Python runtime with a JSONDecodeError.
+Rewrite: Built resilient fail-safes into the credential parser within integrations.py. I instituted a strict validation check ensuring the token cache is only written to if the credentials successfully populate. Additionally, I added robust file-system parsing to detect, delete, and recover from corrupted 0-byte token files automatically on boot, gracefully failing back to a listening state instead of crashing.
+2. Thread-Blocking Auth Deadlock
+Failure: The local Google Authentication server loop (run_local_server) was spinning up with no timeout parameter. If a user lost the sign-in link or closed their browser prematurely, the main agent thread was permanently paralyzed waiting for a callback that would never arrive, locking the user out of interacting with JARVIS.
+Rewrite: Engineered a 120-second rigid timeout threshold into the local server's execution flow. This decoupled the local web listener from blocking indefinitely, allowing the agent thread to automatically sever the dead connection, return the GUI to standby, and resume active voice processing.
+3. The Missing Translucency Glitch (Structural UI Failure)
+Failure: We designed a sleek 'AnimatedGlassDialog' for the modal windows. However, the Windows OS dropped the CSS background completely because the Qt dialog was frameless and translucent, resulting in UI text hovering invisibly over the desktop/webcam feed without a background frame.
+Rewrite: Bypassed the CSS stylesheet renderer completely. We overrode the C++ paintEvent method in the base class to manually draw an anti-aliased, rounded rectangle filled with our precise #212121 monochrome styling using a QPainter brush. This forced Windows to explicitly render the modal container on top of the translucent frameless layer.
+4. Modal Overlapping & Z-Index Clashing
+Failure: High-priority prompts (like the Google Auth menu) and utility windows (like the Protocol Configuration) were opening simultaneously and fighting for Z-index space, with the central JARVIS orb awkwardly overlapping everything.
+Rewrite: Rewrote the UI state machine to enforce singular visual focus. Added a global _close_all_ui() sweep triggered precisely before invoking a synchronous modal to clear the workspace. Implemented dynamic parent-hiding protocols using showEvent and hideEvent overwrites on the modals to automatically force the JARVIS Orb into a hidden standby state whenever a menu activates, restoring it fluidly when the menu is destroyed.
+These architectural fixes heavily stabilized the runtime environment and proved the necessity of resilient fallback protocols in asynchronous multi-threaded assistant applications.

@@ -1,0 +1,17 @@
+SpeechRecognition>=3.10.0
+PyAudio>=0.2.14
+elevenlabs>=2.0.0
+python-dotenv>=1.0.0
+open-interpreter>=0.4.0
+pygame>=2.5.0
+pyperclip>=1.8.2
+PyQt6>=6.0.0
+google-generativeai==0.7.2
+google-genai
+pvporcupine>=3.0.0
+uiautomation>=2.0.18
+Pillow>=10.0.0
+easyocr>=1.7.0
+mss>=9.0.0
+pyautogui>=0.9.54
+screen-ocr[winrt]

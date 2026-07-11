@@ -1,0 +1,3 @@
+@echo off
+echo Requesting Administrator privileges to bypass Windows UIPI / input blockers...
+powershell -Command "Start-Process python -ArgumentList 'main.py' -Verb RunAs -WorkingDirectory '%cd%'"

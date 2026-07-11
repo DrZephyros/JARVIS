@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment
+.env
+Secrets.txt
+google_client_secrets.json
+google_token.json
+azure_client_id.txt
+
+# Media/Logs
+*.log
+trace.txt
+output.txt
+stack_dump.txt
+temp_screenshot.png
+tts_cache/
+
+# IDE
+.vscode/
+
+# Project specifics
+memory.json
+todo_state.json
