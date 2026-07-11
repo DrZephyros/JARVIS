@@ -2785,15 +2785,8 @@ Example:
             
             target_window = None
             if browser_windows:
-                # Prioritize freshly opened "new tab" windows
-                for win in browser_windows:
-                    if "new tab" in win.title.lower() or "google search" in win.title.lower():
-                        target_window = win
-                        break
-                # Fallback to highest in Z-order
-                if not target_window:
-                    target_window = browser_windows[0]
-                    
+                # Highest in Z-order is the most recently activated/launched
+                target_window = browser_windows[0]
             if not target_window:
                 # If we couldn't find it by title, try to find a window with a known browser class
                 user32 = ctypes.windll.user32
