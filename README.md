@@ -9,7 +9,7 @@ An autonomous, multimodal AI assistant built to act as a replica of Iron Man's J
 - **Autonomous Vision UI Navigation**: Uses an advanced Computer Vision pipeline (OpenCV + Set-of-Mark OCR Prompting) to dynamically identify, read, and click buttons on your screen. It can skip ads, maximize videos, and navigate GUIs just like a human.
 - **Dynamic User Interface**: Features a beautiful front-end displaying current AI states (Listening, Thinking, Speaking) with overlapping modal support and smooth Z-index management.
 - **Premium Voice (Text-to-Speech)**: Integrated with ElevenLabs for a responsive, cinematic voice profile with intelligent background muting to prevent audio deadlocks.
-- **Google Workspace Integration**: Automatically fetches and reads unanswered emails via secure local OAuth authentication protocols.
+- **Google Workspace & Microsoft Office Integration**: Automatically fetches and reads unanswered emails via secure local OAuth authentication protocols for both Google and Microsoft (Azure) accounts.
 
 ---
 
@@ -35,11 +35,19 @@ You will need API keys for the LLM and TTS engines.
    - `ELEVENLABS_API_KEY`
    - (Other keys if requested).
 
-### 4. Google Authentication (For Email Integration)
-To allow JARVIS to read your emails, you must configure a Google Cloud Console project.
+### 4. Authentication (For Email Integration)
+To allow JARVIS to read your emails, you must configure cloud projects for the accounts you use.
+
+**Google Account Setup**:
 1. Create OAuth 2.0 Credentials (Desktop App) in Google Cloud.
 2. Download the JSON file and rename it exactly to `google_client_secrets.json`.
 3. Place this file in the root JARVIS directory.
+
+**Microsoft Account Setup**:
+1. Create an App Registration in the Microsoft Entra ID (Azure) portal.
+2. Configure it for "Mobile and desktop applications".
+3. Copy your Application (client) ID into a new file named `azure_client_id.txt`.
+4. Place this file in the root JARVIS directory.
 
 ### 5. Download Offline Wake Word Models
 JARVIS relies on a local VOSK model to continuously listen for his name without burning cloud API credits.
