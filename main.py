@@ -172,12 +172,12 @@ def check_and_run_setup():
         layout.addWidget(entry)
         entries[key] = entry
 
-    if not os.getenv("PORCUPINE_API_KEY"):
-        layout.addWidget(QLabel("PORCUPINE_API_KEY (Optional, for Wake Word):"))
+    if not os.getenv("PICOVOICE_ACCESS_KEY"):
+        layout.addWidget(QLabel("PICOVOICE_ACCESS_KEY (Optional, for Wake Word):"))
         entry = QLineEdit()
         entry.setEchoMode(QLineEdit.EchoMode.Password)
         layout.addWidget(entry)
-        entries["PORCUPINE_API_KEY"] = entry
+        entries["PICOVOICE_ACCESS_KEY"] = entry
 
     def save_keys():
         with open(".env", "a") as f:
