@@ -490,8 +490,8 @@ DOMAIN_KNOWLEDGE = {
 - If the goal involves playing a video, after the video starts you MUST append these verification steps:
   - Check if the video is muted (look at the speaker icon on the player). If and ONLY if it is muted, press 'm' to unmute it. Do NOT press 'm' if it is already unmuted.
   - Check if the video is playing past the 20-second mark. If it is past 20 seconds, rewind to the start (<rewind_hotkey>). Do NOT rewind if it is under 20 seconds.
-  - Check if the video is in fullscreen mode. If the video player does NOT take up the entire screen, plan to click the fullscreen icon at the bottom right of the player. Do NOT click it if it is already fullscreen.""",
-        "agent_rules": """- When playing a video, use the 'click' action on the fullscreen button icon at the bottom right of the video player to enter fullscreen. Do NOT use the 'press f' hotkey, as the browser often loses keyboard focus during loading.
+  - Check if the video is in fullscreen mode. If the video player does NOT take up the entire screen, plan to double click the center of the video player to enter fullscreen. Do NOT try to use hotkeys or the fullscreen icon.""",
+        "agent_rules": """- When playing a video, use the 'double_click' action directly on the center of the video player (the main video area) to enter fullscreen mode. Do NOT try to click the small fullscreen icon, as the player controls auto-hide. Do NOT use the 'press f' hotkey, as the browser often loses keyboard focus.
 - To check if a YouTube video is muted, look at the speaker icon on the player controls. A slash through it means muted. Do NOT unmute unless you are absolutely sure it is muted.
 - Do NOT attempt to skip ads. Just ensure the video (or ad) is playing, fullscreen, and unmuted.
 - If the goal involves playing a video, do NOT stop at search results. You must click the video thumbnail and wait for it to play.
