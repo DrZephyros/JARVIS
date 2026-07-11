@@ -493,7 +493,7 @@ DOMAIN_KNOWLEDGE = {
   - Check if the video is in fullscreen mode. If the video player does NOT take up the entire screen, plan to double click the center of the video player to enter fullscreen. Do NOT try to use hotkeys or the fullscreen icon.""",
         "agent_rules": """- When playing a video, use the 'double_click' action directly on the center of the video player (the main video area) to enter fullscreen mode. Do NOT try to click the small fullscreen icon, as the player controls auto-hide. Do NOT use the 'press f' hotkey, as the browser often loses keyboard focus.
 - To check if a YouTube video is muted, look at the speaker icon on the player controls. A slash through it means muted. Do NOT unmute unless you are absolutely sure it is muted.
-- Do NOT attempt to skip ads. Just ensure the video (or ad) is playing, fullscreen, and unmuted.
+- If an ad is playing and a skip button is visible, you may click it to get to the main video faster.
 - If the goal involves playing a video, do NOT stop at search results. You must click the video thumbnail and wait for it to play.
 - Once the requested video is playing, DO NOT click on other video thumbnails in the sidebar.""",
         "verify_rules": """  CRITICAL FOR VIDEOS: The task is ONLY complete if ALL of these are true:
