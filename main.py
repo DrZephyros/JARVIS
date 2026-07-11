@@ -490,11 +490,12 @@ DOMAIN_KNOWLEDGE = {
 - If the goal involves playing a video, after the video starts you MUST append these verification steps:
   - Check if the video is muted (look at the speaker icon on the player). If and ONLY if it is muted, press 'm' to unmute it. Do NOT press 'm' if it is already unmuted.
   - Check if the video is playing past the 20-second mark. If it is past 20 seconds, rewind to the start (<rewind_hotkey>). Do NOT rewind if it is under 20 seconds.
-  - Check if the video is in fullscreen mode. If the video player does NOT take up the entire screen, press the fullscreen hotkey to fullscreen the video. Do NOT press it if it is already fullscreen.""",
-        "agent_rules": """- When playing a video, only press the fullscreen hotkey to enter fullscreen if the video is NOT already in fullscreen mode.
-- To check if a YouTube video is muted, look at the speaker icon on the player controls. A slash through it means muted. Do NOT press 'm' unless you are absolutely sure it is muted.
+  - Check if the video is in fullscreen mode. If the video player does NOT take up the entire screen, plan to click the fullscreen icon at the bottom right of the player. Do NOT click it if it is already fullscreen.""",
+        "agent_rules": """- When playing a video, use the 'click' action on the fullscreen button icon at the bottom right of the video player to enter fullscreen. Do NOT use the 'press f' hotkey, as the browser often loses keyboard focus during loading.
+- To check if a YouTube video is muted, look at the speaker icon on the player controls. A slash through it means muted. Do NOT unmute unless you are absolutely sure it is muted.
 - Do NOT attempt to skip ads. Just ensure the video (or ad) is playing, fullscreen, and unmuted.
-- If the goal involves playing a video, do NOT stop at search results. You must click the video thumbnail and wait for it to play.""",
+- If the goal involves playing a video, do NOT stop at search results. You must click the video thumbnail and wait for it to play.
+- Once the requested video is playing, DO NOT click on other video thumbnails in the sidebar.""",
         "verify_rules": """  CRITICAL FOR VIDEOS: The task is ONLY complete if ALL of these are true:
   1. The video (or an ad for the video) is playing.
   2. The browser is maximized AND the video player is in FULLSCREEN mode (taking up the entire screen).
@@ -2246,7 +2247,7 @@ class Jarvis:
                     # Fallback for youtube or general
                     url = f"https://www.youtube.com/results?search_query={urllib.parse.quote(query)}"
                     self._open_urls_in_chrome([url])
-                    self._queue_agent(f"Play the media requested by the user: '{full_request}'. Note: You are currently on the YouTube search results page for '{query}'.", skip_preinit=True)
+                    self._queue_agent(f"Play the media requested by the user: '{full_request}'.", skip_preinit=True)
                     self._force_sleep = True
 
             elif intent == "locate_and_open":
