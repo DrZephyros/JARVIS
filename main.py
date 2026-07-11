@@ -132,6 +132,79 @@ except ImportError:
 
 load_dotenv()
 
+def check_and_run_setup():
+    import sys
+    from PyQt6.QtWidgets import QApplication, QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox
+    from PyQt6.QtCore import Qt
+
+    missing = []
+    if not os.getenv("GEMINI_API_KEY"): missing.append("GEMINI_API_KEY")
+    if not os.getenv("ELEVENLABS_API_KEY"): missing.append("ELEVENLABS_API_KEY")
+
+    if not missing:
+        return
+
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication(sys.argv)
+
+    dialog = QDialog()
+    dialog.setWindowTitle("JARVIS Initial Setup")
+    dialog.setMinimumWidth(450)
+    layout = QVBoxLayout()
+    layout.setSpacing(10)
+    layout.setContentsMargins(20, 20, 20, 20)
+
+    title = QLabel("Welcome to JARVIS!")
+    title.setStyleSheet("font-size: 18px; font-weight: bold;")
+    title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    layout.addWidget(title)
+
+    desc = QLabel("It looks like you're missing some required API keys.\nPlease enter them below to generate your .env file:")
+    desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    layout.addWidget(desc)
+
+    entries = {}
+    for key in missing:
+        layout.addWidget(QLabel(f"{key}:"))
+        entry = QLineEdit()
+        entry.setEchoMode(QLineEdit.EchoMode.Password)
+        layout.addWidget(entry)
+        entries[key] = entry
+
+    if not os.getenv("PORCUPINE_API_KEY"):
+        layout.addWidget(QLabel("PORCUPINE_API_KEY (Optional, for Wake Word):"))
+        entry = QLineEdit()
+        entry.setEchoMode(QLineEdit.EchoMode.Password)
+        layout.addWidget(entry)
+        entries["PORCUPINE_API_KEY"] = entry
+
+    def save_keys():
+        with open(".env", "a") as f:
+            for k, v in entries.items():
+                val = v.text().strip()
+                if val:
+                    f.write(f"\n{k}={val}")
+        dialog.accept()
+
+    btn = QPushButton("Save and Continue")
+    btn.setStyleSheet("background-color: #0078D7; color: white; padding: 8px; font-weight: bold;")
+    btn.clicked.connect(save_keys)
+    layout.addWidget(btn)
+
+    dialog.setLayout(layout)
+    dialog.exec()
+
+    # Reload dotenv
+    from dotenv import load_dotenv
+    load_dotenv(override=True)
+
+    if not os.getenv("GEMINI_API_KEY") or not os.getenv("ELEVENLABS_API_KEY"):
+        QMessageBox.critical(None, "Error", "Required API keys are still missing. JARVIS will now exit.")
+        sys.exit(1)
+
+check_and_run_setup()
+
 WAKE_WORD = "jarvis"
 SESSION_IDLE_TIMEOUT = float(os.getenv("SESSION_IDLE_TIMEOUT", "5"))
 INTERRUPT_RMS_THRESHOLD = int(os.getenv("INTERRUPT_RMS_THRESHOLD", "12000"))
