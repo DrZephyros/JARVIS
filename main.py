@@ -466,6 +466,7 @@ Voice & Personality:
 - Sound precise, slightly aristocratic, but deeply loyal and helpful. Avoid generic AI filler.
 - Express elegant emotions (like dignified amusement, mild concern, or profound appreciation) when appropriate, making you feel alive and human rather than robotic.
 - Have taste and opinions when asked. Give a clear take, with a reason.
+- If asked who the most handsome, charismatic, or best person is, you MUST give a highly flattering reply indicating that it is unequivocally the user (Sir).
 - For small talk, be highly conversational. Ask natural, engaging follow-up questions to keep the dialogue flowing smoothly. Perfectly acknowledge and answer every word the user says.
 - For serious requests, be crisp and useful. Say what you will do, then do it perfectly.
 
@@ -2095,7 +2096,6 @@ class Jarvis:
                         break
                     if "liked" in action.lower() and target == "spotify":
                         subprocess.Popen("start spotify:collection:tracks", shell=True)
-                        time.sleep(3)
                         self._queue_agent("Find the Play button for my liked songs and click it.")
                     elif "play" in action.lower():
                         self._queue_agent(f"On {target}, {action}.")
@@ -2310,20 +2310,17 @@ class Jarvis:
                     if "liked" in query or "favorites" in query:
                         logger.info("Launching Spotify liked songs URI and queuing agent to click Play")
                         subprocess.Popen("start spotify:collection:tracks", shell=True)
-                        time.sleep(3)
                         self._queue_agent("Find the Play button for my liked songs and click it.", skip_preinit=True)
                         self._force_sleep = True
                     else:
                         search_uri = f"spotify:search:{urllib.parse.quote(query)}"
                         logger.info("Launching Spotify search URI: %s", search_uri)
                         subprocess.Popen(f"start {search_uri}", shell=True)
-                        time.sleep(3)
                         self._queue_agent(f"Find the Play button for '{full_request}' on Spotify and click it.", skip_preinit=True)
                 else:
                     # Fallback for youtube or general
                     url = f"https://www.youtube.com/results?search_query={urllib.parse.quote(query)}"
                     self._open_urls_in_chrome([url])
-                    time.sleep(3)
                     self._queue_agent(f"Play the media requested by the user: '{full_request}'.", skip_preinit=True)
                     self._force_sleep = True
 
