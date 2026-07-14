@@ -398,7 +398,7 @@ def generate_chat(messages: list, model: str, system: str = "", max_tokens: int 
     return res.text
 
 def generate_multimodal(prompt: str, image_b64: str, model: str, system: str = "", max_tokens: int = 1000, **kwargs) -> str:
-    import io, base64
+    import io, base64, time
     from PIL import Image
     kwargs["system"] = system
     config = _build_modern_config(model, **kwargs)
@@ -407,12 +407,21 @@ def generate_multimodal(prompt: str, image_b64: str, model: str, system: str = "
     img_data = base64.b64decode(image_b64)
     img = Image.open(io.BytesIO(img_data))
     
-    res = modern_genai_client.models.generate_content(
-        model=actual_model,
-        contents=[prompt, img],
-        config=config
-    )
-    return res.text
+    for attempt in range(3):
+        try:
+            res = modern_genai_client.models.generate_content(
+                model=actual_model,
+                contents=[prompt, img],
+                config=config
+            )
+            return res.text
+        except Exception as e:
+            if ("503" in str(e) or "500" in str(e)) and attempt < 2:
+                logger.warning(f"Gemini API error (500/503), retrying in {2 ** attempt} seconds...")
+                time.sleep(2 ** attempt)
+            else:
+                raise
+
 
 def generate_audio_intent(wav_bytes: bytes, image_b64: str, model: str, system: str = "", history_text: str = "", **kwargs) -> str:
     kwargs["system"] = system
