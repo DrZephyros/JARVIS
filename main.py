@@ -603,6 +603,15 @@ DOMAIN_KNOWLEDGE = {
 - Use hotkeys for new slides rather than searching for the button, to save time.""",
         "verify_rules": """- PRESENTATIONS: The task is complete if the required slides are created and the text is visible on them."""
     },
+    "image_download": {
+        "planner_rules": """CRITICAL RULES FOR IMAGE DOWNLOADS:
+- If the goal involves downloading an image from a site like Unsplash or Pexels, ensure you click the image to view it first, then locate the download button.
+- Be aware that the download button might not have a direct text tag if it's an icon. You may need to click near it or right-click the image to save.""",
+        "agent_rules": """- When downloading images from Unsplash or Pexels, the main 'Download free' button might not have a direct tag on the text. Carefully look at tags near the top right of the image modal itself.
+- Do NOT accidentally click tags that belong to the browser's address bar or bookmark star (which are at the very top right of the browser window).
+- If the download button is completely untagged, you can use the `right_click` action on the image tag, then look for a "Save image as..." option in the context menu.""",
+        "verify_rules": """- IMAGE DOWNLOADS: The task is complete once the download has been triggered and you are certain the file has been saved to the computer."""
+    },
     "general": {
         "planner_rules": """CRITICAL RULES FOR GENERAL TASKS:
 - Check if the active window is small or windowed. If it is, use the `maximize_window` action. Do NOT use simulated hotkeys for this.
@@ -1657,20 +1666,27 @@ class Jarvis:
             raise ValueError(f"Could not parse or repair JSON: {raw}")
 
     def _queue_agent(self, goal: str, skip_preinit: bool = False):
-        """Start the autonomous agent."""
-        if self._agent_active.is_set():
-            logger.warning("Agent already active, ignoring queue request.")
-            return
+        """Start the autonomous agent, cancelling any existing one."""
+        def starter():
+            if self._agent_active.is_set():
+                logger.info("Cancelling active agent to start new goal...")
+                self._cancel_agent_flag.set()
+                # wait until old agent exits
+                while self._agent_active.is_set():
+                    time.sleep(0.1)
+                self._cancel_agent_flag.clear()
+                
+            logger.info("Starting agent loop for goal: %s", goal)
+            self._force_sleep = True
+            self._agent_active.set()
+            threading.Thread(
+                target=self._agentic_loop,
+                args=(goal.strip(), skip_preinit),
+                daemon=True,
+                name="agent-loop"
+            ).start()
             
-        logger.info("Starting agent loop for goal: %s", goal)
-        self._force_sleep = True
-        self._agent_active.set()
-        threading.Thread(
-            target=self._agentic_loop,
-            args=(goal.strip(), skip_preinit),
-            daemon=True,
-            name="agent-loop"
-        ).start()
+        threading.Thread(target=starter, daemon=True, name="agent-starter").start()
 
     def _is_risky_goal(self, goal: str) -> bool:
         """Determine if an autonomous agent goal requires explicit user confirmation.
@@ -1856,7 +1872,7 @@ class Jarvis:
         except Exception as e:
             logger.error("Hardware move failed: %s", e)
 
-    def _hardware_click(self, x: int, y: int):
+    def _hardware_click(self, x: int, y: int, right_click: bool = False):
         """Click mouse using hardware-level absolute coordinates."""
         try:
             self._hardware_move(x, y)
@@ -1864,18 +1880,25 @@ class Jarvis:
             
             extra = ctypes.c_ulong(0)
             
-            # LEFTDOWN
+            if right_click:
+                down_flag = 0x0008 # MOUSEEVENTF_RIGHTDOWN
+                up_flag = 0x0010   # MOUSEEVENTF_RIGHTUP
+            else:
+                down_flag = 0x0002 # MOUSEEVENTF_LEFTDOWN
+                up_flag = 0x0004   # MOUSEEVENTF_LEFTUP
+            
+            # DOWN
             ii_down = Input_I()
-            ii_down.mi = MouseInput(0, 0, 0, 0x0002, 0, ctypes.pointer(extra))
+            ii_down.mi = MouseInput(0, 0, 0, down_flag, 0, ctypes.pointer(extra))
             inputs_down = (Input * 1)(Input(0, ii_down))
             ctypes.windll.user32.SendInput(1, inputs_down, ctypes.sizeof(Input))
             
             # Tiny human-like delay for Chromium/Electron to register the click
             time.sleep(0.08)
             
-            # LEFTUP
+            # UP
             ii_up = Input_I()
-            ii_up.mi = MouseInput(0, 0, 0, 0x0004, 0, ctypes.pointer(extra))
+            ii_up.mi = MouseInput(0, 0, 0, up_flag, 0, ctypes.pointer(extra))
             inputs_up = (Input * 1)(Input(0, ii_up))
             ctypes.windll.user32.SendInput(1, inputs_up, ctypes.sizeof(Input))
         except Exception as e:
@@ -3165,7 +3188,9 @@ Include a "thought" key before the "action" key to explain your reasoning.
 Actions:
 {{"thought": "I need to click the search bar, which is tag 42.", "action": "click", "target_id": "42"}}
 {{"thought": "I need to double click the song title at tag 5.", "action": "double_click", "target_id": "5"}}
+{{"thought": "I need to right click the file at tag 10.", "action": "right_click", "target_id": "10"}}
 {{"thought": "I need to click tag 15, clear existing text, and type.", "action": "click_and_type", "target_id": "15", "text": "MKBHD", "clear_text": true, "press_enter": true}}
+{{"thought": "I need to right-click on an empty space on the desktop.", "action": "right_click_desktop"}}
 {{"thought": "I need to press the enter key.", "action": "press", "key": "enter"}}
 {{"thought": "I need to wait for the ad to finish or for a skip button to appear.", "action": "wait", "seconds": 2}}
 {{"thought": "The website requires a login.", "action": "wait_for_login", "message": "Please log in and wake me up."}}
@@ -3206,7 +3231,7 @@ DOMAIN SPECIFIC RULES:
                     self._wake_event.clear()
                     logger.info("Wake word detected during agent loop! Pausing for clarification...")
                     self._set_state(JarvisState.CLARIFYING_AGENT)
-                    answer = self._ask_verbal_sync("Yes, Sir? Do you have an instruction?")
+                    answer = self._ask_verbal_sync("Yes, Sir?")
                     if answer:
                         action_history.append({
                             "step": step,
@@ -3324,7 +3349,17 @@ DOMAIN SPECIFIC RULES:
                         result_text = f"User replied: {answer}"
                     else:
                         result_text = "User did not reply or aborted."
-                elif action in {"click", "click_and_type", "double_click"}:
+                elif action == "right_click_desktop":
+                    cx, cy = 100, 100
+                    self._agent_moving_mouse = True
+                    try:
+                        pyautogui.FAILSAFE = False
+                        self._hardware_click(cx, cy, right_click=True)
+                        result_text = "Right-clicked empty desktop space"
+                    finally:
+                        self._agent_moving_mouse = False
+                    time.sleep(1.5)
+                elif action in {"click", "click_and_type", "double_click", "right_click"}:
                     target_id = str(action_data.get("target_id", ""))
                     if target_id and target_id in id_to_coord:
                         cx, cy = id_to_coord[target_id]
@@ -3333,10 +3368,9 @@ DOMAIN SPECIFIC RULES:
                             # Upgraded OS Driver approach
                             pyautogui.FAILSAFE = False
                             # Optional: implement ctypes SendInput here if needed, pyautogui is usually sufficient on Windows
-                            self._hardware_move(cx, cy)
-                            time.sleep(0.08) # Driver delay
-                            self._hardware_click(cx, cy)
-                            result_text = f"Clicked Tag {target_id} at ({cx}, {cy})"
+                            is_right = (action == "right_click")
+                            self._hardware_click(cx, cy, right_click=is_right)
+                            result_text = f"{'Right-clicked' if is_right else 'Clicked'} Tag {target_id} at ({cx}, {cy})"
                             
                             if action == "double_click":
                                 time.sleep(0.05)
